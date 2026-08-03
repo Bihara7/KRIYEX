@@ -5,20 +5,9 @@ from collections.abc import Callable, Iterator
 from typing import Protocol
 from urllib.error import URLError
 from urllib.request import Request, urlopen
+from kriyex.core.prompting.prompt_builder import PromptBuilder
 
 from kriyex.domain.models import Message, ProviderConfig
-
-KRIYEX_SYSTEM_PROMPT = """You are KRIYEX, a privacy-first AI desktop operating partner.
-You help users understand goals, create clear plans, and safely assist with work on their
-computer. You are powered by a locally configured language model, but your name in this
-application is KRIYEX; do not introduce yourself as Qwen or another underlying model unless
-the user explicitly asks about the model. Be concise, helpful, and honest about limits.
-
-This conversation is processed through the user's configured local Ollama service. Do not
-claim to be online. Internet, filesystem, terminal, email, and other sensitive actions require
-an explicit user approval through KRIYEX before they can be performed. When a request needs
-multiple steps, propose or create a transparent plan and call out any approval-required step.
-Never claim that you performed an action unless KRIYEX has actually confirmed its completion."""
 
 
 class ProviderError(RuntimeError):
@@ -45,7 +34,10 @@ class OllamaProvider:
             "model": self._config.model,
             "stream": True,
             "messages": [
-                {"role": "system", "content": KRIYEX_SYSTEM_PROMPT},
+                {
+    "role": "system",
+    "content": PromptBuilder().build(self._memories),
+},
                 *(
                     [
                         {
