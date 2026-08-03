@@ -1,4 +1,5 @@
 from kriyex.config.settings import settings
+from kriyex.core.ai_service import AIService
 from kriyex.core.audit_service import AuditService
 from kriyex.core.chat_service import ChatService
 from kriyex.core.executor import ToolExecutor
@@ -15,15 +16,14 @@ from kriyex.infrastructure.database import Database
 class ApplicationContainer:
     """
     Central container for all shared application services.
-
-    This class is responsible for creating and storing services that are
-    used throughout the application.
     """
 
     def __init__(self) -> None:
+        # Database
         self.database = Database(settings.database_path)
         self.database.initialize()
 
+        # Core Services
         self.chat = ChatService(self.database)
         self.permissions = PermissionManager(self.database)
         self.audit = AuditService(self.database)
@@ -31,12 +31,20 @@ class ApplicationContainer:
         self.memory = MemoryService(self.database)
         self.missions = MissionService(self.database)
 
+        # AI
+        self.ai = AIService()
+
+        # Private Mode
         self.chat.set_private_mode(self.settings.private_mode())
         self.audit.set_private_mode(self.settings.private_mode())
 
+        # Tools
         self.tools: ToolRegistry = create_default_registry()
 
-        self.tasks = TaskService(self.database, Planner())
+        self.tasks = TaskService(
+            self.database,
+            Planner(),
+        )
 
         self.executor = ToolExecutor(
             self.tools,

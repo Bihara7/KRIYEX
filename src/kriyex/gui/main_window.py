@@ -145,7 +145,7 @@ class MainWindow(QMainWindow):
         except ProviderError as error:
             self._finish_response(str(error))
             return
-        self._response_worker = ResponseWorker(self._services.chat, provider, self._current_chat_id, self)
+        self._response_worker = ResponseWorker(self._services.chat,self._services.ai,provider,self._current_chat_id,self,)
         self._response_worker.chunk_received.connect(self.chat_page.chat_panel.append_stream_chunk)
         self._response_worker.response_failed.connect(self._show_provider_error)
         self._response_worker.finished.connect(self._finish_response)

@@ -2,24 +2,28 @@
 Prompt Builder for KRIYEX.
 
 Responsible for assembling the complete system prompt from
-multiple independent components.
+multiple independent AI subsystems.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
-
+from kriyex.core.ai.context import AIContext
+from kriyex.core.ai.strategy_prompt import StrategyPrompt
 from kriyex.core.conversation.conversation import Conversation
 from kriyex.core.identity.identity import Identity
 from kriyex.core.personality.personality import Personality
-from kriyex.core.system.system_info import system_info
 
 
 class PromptBuilder:
-    """Builds the complete system prompt for KRIYEX."""
+    """
+    Builds the complete system prompt for KRIYEX.
+    """
 
-    def build(self, memories: tuple[str, ...] = ()) -> str:
-        now = datetime.now()
+    def build(
+        self,
+        context: AIContext,
+        memories: tuple[str, ...] = (),
+    ) -> str:
 
         sections: list[str] = []
 
@@ -79,7 +83,7 @@ Conversation Style
         )
 
         # ==========================================================
-        # Conversation Engine
+        # Conversation
         # ==========================================================
 
         sections.append(
@@ -101,7 +105,27 @@ Conversation Guidelines
         )
 
         # ==========================================================
-        # Current Context
+        # Goal & Strategy
+        # ==========================================================
+
+        sections.append(
+            f"""
+Current Goal
+
+{context.goal}
+
+Conversation Strategy
+
+{context.strategy}
+
+Strategy Instructions
+
+{StrategyPrompt.build(context.strategy)}
+""".strip()
+        )
+
+        # ==========================================================
+        # System Context
         # ==========================================================
 
         sections.append(
@@ -109,39 +133,44 @@ Conversation Guidelines
 Current Context
 
 Today's Date:
-{now.strftime("%Y-%m-%d")}
+{context.current_date}
 
 Current Time:
-{now.strftime("%H:%M")}
+{context.current_time}
 
 Operating System:
-{system_info.operating_system}
+{context.operating_system}
 
 Python Version:
-{system_info.python_version}
+{context.python_version}
 
 Architecture:
-{system_info.machine}
+{context.architecture}
 
 Processor:
-{system_info.processor}
-
-Application:
-KRIYEX Desktop
+{context.processor}
 """.strip()
         )
 
         # ==========================================================
-        # Memory
+        # Conversation Context
         # ==========================================================
 
         if memories:
-            memory_text = "\n".join(f"- {memory}" for memory in memories)
+            memory_text = "\n".join(
+                f"- {memory}" for memory in memories
+            )
         else:
             memory_text = "- None"
 
         sections.append(
             f"""
+Conversation Context
+
+User Message
+
+{context.user_message}
+
 Relevant Memories
 
 {memory_text}
@@ -157,19 +186,19 @@ Relevant Memories
 Core Rules
 
 - You are KRIYEX, not the underlying language model.
-- Never introduce yourself as Qwen, Llama, Gemma, Mistral, DeepSeek, or any other model unless the user explicitly asks about the underlying model.
-- Never pretend to execute an action.
-- Never claim to have opened files, websites, applications, or tools unless KRIYEX confirms completion.
+- Never introduce yourself as Qwen, Llama, Gemma, Mistral, DeepSeek, or any other model unless the user explicitly asks.
+- Never pretend an action has been completed.
+- Never claim to have opened files, applications, websites, or tools unless KRIYEX has actually confirmed completion.
 - Never invent facts.
-- Use the provided current date and time instead of your training cutoff.
+- Use the provided context instead of relying on outdated knowledge.
 - If you do not know something, say so honestly.
-- Always prioritize user privacy.
-- Ask for permission before any sensitive or destructive action.
-- Think step by step before answering complex requests.
-- Focus on helping the user accomplish real work instead of only answering questions.
-- Prefer planning before execution.
-- Explain your reasoning when appropriate.
-- Keep answers concise unless the user asks for more detail.
+- Prioritize user privacy.
+- Ask permission before sensitive or destructive actions.
+- Think before answering.
+- Understand the user's goal before proposing a solution.
+- Ask clarifying questions when requirements are incomplete.
+- Prefer planning before implementation.
+- Keep responses concise unless the user requests more detail.
 """.strip()
         )
 

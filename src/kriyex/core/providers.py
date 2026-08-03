@@ -5,7 +5,6 @@ from collections.abc import Callable, Iterator
 from typing import Protocol
 from urllib.error import URLError
 from urllib.request import Request, urlopen
-from kriyex.core.prompting.prompt_builder import PromptBuilder
 
 from kriyex.domain.models import Message, ProviderConfig
 
@@ -15,7 +14,12 @@ class ProviderError(RuntimeError):
 
 
 class ChatProvider(Protocol):
-    def stream(self, messages: list[Message]) -> Iterator[str]: ...
+    def stream(
+        self,
+        system_prompt: str,
+        messages: list[Message],
+    ) -> Iterator[str]:
+        ...
 
 
 class OllamaProvider:
@@ -29,27 +33,20 @@ class OllamaProvider:
         self._memories = memories
         self._opener = opener
 
-    def stream(self, messages: list[Message]) -> Iterator[str]:
+    def stream(
+    self,
+    system_prompt: str,
+    messages: list[Message],
+) -> Iterator[str]:
         payload = {
             "model": self._config.model,
             "stream": True,
             "messages": [
-                {
-    "role": "system",
-    "content": PromptBuilder().build(self._memories),
-},
-                *(
-                    [
-                        {
-                            "role": "system",
-                            "content": "User-approved relevant memories:\n- "
-                            + "\n- ".join(self._memories),
-                        }
-                    ]
-                    if self._memories
-                    else []
-                ),
-                *[
+    {
+        "role": "system",
+        "content": system_prompt,
+    },
+    *[
                     {"role": message.role.value, "content": message.content}
                     for message in messages
                 ],
