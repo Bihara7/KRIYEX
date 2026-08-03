@@ -20,6 +20,7 @@ class ResponseWorker(QThread):
         parent: object | None = None,
     ) -> None:
         super().__init__(parent)
+
         self._chat_service = chat_service
         self._ai_service = ai_service
         self._provider = provider
@@ -29,22 +30,44 @@ class ResponseWorker(QThread):
         response_parts: list[str] = []
 
         try:
+            # Get conversation history
             messages = self._chat_service.messages(self._chat_id)
 
+            # Get latest user message
             user_message = ""
             for message in reversed(messages):
                 if message.role.value == "user":
                     user_message = message.content
                     break
 
+            # Build AI context
             context = self._ai_service.analyze(
                 user_message=user_message,
                 chat_id=self._chat_id,
             )
 
-            system_prompt = self._ai_service.build_system_prompt(context)
+            # Retrieve relevant memories
+            memories: tuple[str, ...] = ()
 
-            for chunk in self._provider.stream(system_prompt, messages):
+            if self._ai_service.memory_service is not None:
+                memories = tuple(
+                    memory.content
+                    for memory in self._ai_service.memory_service.relevant_to(
+                        user_message
+                    )
+                )
+
+            # Build system prompt
+            system_prompt = self._ai_service.build_system_prompt(
+                context=context,
+                memories=memories,
+            )
+
+            # Stream response
+            for chunk in self._provider.stream(
+                system_prompt,
+                messages,
+            ):
                 response_parts.append(chunk)
                 self.chunk_received.emit(chunk)
 
