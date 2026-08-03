@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from kriyex.app.bootstrap import ApplicationServices
+from kriyex.app.container import ApplicationContainer
 from kriyex.config.settings import settings
 from kriyex.core.providers import ProviderError, ProviderFactory
 from kriyex.domain.models import PermissionDecision
@@ -30,9 +30,7 @@ from kriyex.gui.sidebar import Sidebar
 
 
 class MainWindow(QMainWindow):
-    """Main window of the KRIYEX desktop application."""
-
-    def __init__(self, services: ApplicationServices) -> None:
+    def __init__(self, services: ApplicationContainer):
         super().__init__()
         self._services = services
         self._current_chat_id: int | None = None
