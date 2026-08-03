@@ -33,6 +33,7 @@ class ApplicationContainer:
 
         # AI
         self.ai = AIService()
+        self.ai.memory_service = self.memory
 
         # Private Mode
         self.chat.set_private_mode(self.settings.private_mode())

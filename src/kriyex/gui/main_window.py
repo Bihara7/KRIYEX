@@ -132,6 +132,7 @@ class MainWindow(QMainWindow):
             self._open_browser(browser_url, content)
             return
         messages = self._services.chat.start_turn(self._current_chat_id, content)
+        self._services.ai.learn(content)
         self.chat_page.chat_panel.show_messages(messages)
         self.chat_page.chat_panel.begin_streaming_response()
         self.chat_page.input_panel.setEnabled(False)
